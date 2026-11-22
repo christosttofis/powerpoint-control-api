@@ -1,0 +1,10 @@
+@echo off
+cd /d "%~dp0"
+title PowerPoint Control API
+if not exist ".venv\Scripts\python.exe" (
+    echo Setup has not been run yet. Double-click setup.bat first.
+    pause
+    exit /b 1
+)
+".venv\Scripts\python.exe" server.py %*
+pause

@@ -15,11 +15,12 @@ a script, `curl`, or your own app.
 |---|---|
 | **Windows 10 or 11** | The server talks to PowerPoint through Windows COM, so it only runs on Windows. |
 | **Microsoft PowerPoint (desktop app)** | Microsoft 365 or Office 2016+. PowerPoint Online (the web version) does **not** work. |
-| **Python 3.10+** | `setup.bat` installs it for you if missing (uses `winget`). |
+| **Internet (first setup only)** | `setup.bat` downloads [uv](https://docs.astral.sh/uv/), Python and the dependencies. You do **not** need to install Python yourself. |
 | **Same network** | The laptop and the controlling device must be on the same Wi-Fi / LAN. |
 
-Python packages (installed automatically): `flask` (web server) and `pywin32` (the
-"win32" library that lets Python control PowerPoint).
+Everything is installed automatically with **uv**: its own Python 3.12 plus `flask`
+(web server) and `pywin32` (the "win32" library that lets Python control PowerPoint),
+in a local `.venv` folder. Nothing is installed system-wide except the small `uv` tool.
 
 ---
 
@@ -31,8 +32,7 @@ Python packages (installed automatically): `flask` (web server) and `pywin32` (t
 
 2. **Double-click `setup.bat`** (one-time only).
    - If Windows shows *"Windows protected your PC"* → click **More info** → **Run anyway**.
-   - If Python is missing, it installs it, then asks you to **close the window and run
-     `setup.bat` again**.
+   - It installs uv, Python and the dependencies (about 1 minute on first run).
    - When asked *"Add a Windows Firewall rule now?"* press **Y** and accept the admin prompt.
      This lets other devices reach the laptop on port 8000.
 
@@ -116,7 +116,7 @@ start.bat --port 8000 --upload-dir C:\Presentations
 |---|---|
 | Controller can't reach the laptop | Same Wi-Fi? Is the `start.bat` window open? Run `allow_firewall.bat` (accept the admin prompt). Some company/guest networks block device-to-device traffic: use a phone hotspot or your own router instead. Test from the other device with `curl http://<laptop-ip>:8000/ping`. |
 | `No slideshow running` | Open the deck and press **F5**, or upload it via `/open`. |
-| `Python was not found; run without arguments to install from the Microsoft Store` | That is a Windows placeholder, not real Python. Run `setup.bat` again (it installs Python), or install from python.org with **"Add python.exe to PATH"** ticked. |
+| `setup.bat` fails while installing uv | Check the internet connection, or install uv manually: `winget install astral-sh.uv`, then run `setup.bat` again. |
 | `setup.bat` says PowerPoint not detected | Install the desktop PowerPoint app (Microsoft 365 / Office). |
 | Slides jump to the wrong number | Make sure it's the same `.pptx` and hidden slides haven't changed. |
 | Something else | Read the error in the `start.bat` window. Restart `start.bat` and PowerPoint. |
@@ -133,8 +133,11 @@ and close it when you're done.
 
 | File | Purpose |
 |---|---|
-| `setup.bat` | One-time setup: Python, virtual env, dependencies, firewall rule. |
+| `setup.bat` | One-time setup: uv, Python, dependencies, firewall rule. |
 | `start.bat` | Starts the server. |
 | `allow_firewall.bat` | Opens TCP port 8000 in Windows Firewall (asks for admin). |
 | `server.py` | The server itself (Flask + pywin32). |
-| `requirements.txt` | Python dependencies. |
+| `pyproject.toml`, `uv.lock` | Dependencies, pinned for uv. |
+
+Prefer to do it by hand? `uv sync` then `uv run server.py`, or with plain pip:
+`pip install flask pywin32` then `python server.py`.

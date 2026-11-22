@@ -8,55 +8,30 @@ echo   PowerPoint Control API - one-time setup
 echo ============================================================
 echo.
 
-REM ---- 1. Find Python 3.10+ ------------------------------------------------
-set "PY="
-py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
-if not errorlevel 1 set "PY=py -3"
-if defined PY goto have_python
-python -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
-if not errorlevel 1 set "PY=python"
-if defined PY goto have_python
+REM ---- 1. Find or install uv --------------------------------------------------
+set "UV="
+where uv >nul 2>&1
+if not errorlevel 1 set "UV=uv"
+if defined UV goto have_uv
+if exist "%USERPROFILE%\.local\bin\uv.exe" set "UV=%USERPROFILE%\.local\bin\uv.exe"
+if defined UV goto have_uv
 
-echo [!] Python 3.10 or newer was not found.
-where winget >nul 2>&1
-if errorlevel 1 goto no_winget
-echo     Installing Python 3.12 with winget...
-echo.
-winget install --id Python.Python.3.12 -e --scope user --accept-package-agreements --accept-source-agreements
-echo.
-echo ============================================================
-echo   Python installed. CLOSE this window and double-click
-echo   setup.bat AGAIN so Windows picks up the new Python.
-echo ============================================================
-pause
-exit /b 0
+echo [..] Installing uv - fast Python package manager...
+powershell -NoProfile -ExecutionPolicy ByPass -Command "irm https://astral.sh/uv/install.ps1 | iex"
+if exist "%USERPROFILE%\.local\bin\uv.exe" set "UV=%USERPROFILE%\.local\bin\uv.exe"
+if not defined UV goto fail
 
-:no_winget
-echo     Install Python from https://www.python.org/downloads/
-echo     IMPORTANT: tick "Add python.exe to PATH" in the installer.
-echo     Then run setup.bat again.
-start "" https://www.python.org/downloads/
-pause
-exit /b 1
+:have_uv
+for /f "delims=" %%v in ('"%UV%" --version') do echo [OK] Found %%v
 
-:have_python
-for /f "delims=" %%v in ('%PY% --version') do echo [OK] Found %%v
-
-REM ---- 2. Virtual environment + dependencies --------------------------------
-if exist ".venv\Scripts\python.exe" goto have_venv
-echo [..] Creating virtual environment in .venv
-%PY% -m venv .venv
-if errorlevel 1 goto fail
-:have_venv
-
-echo [..] Installing dependencies (flask, pywin32)...
-".venv\Scripts\python.exe" -m pip install --upgrade pip --quiet
-".venv\Scripts\python.exe" -m pip install -r requirements.txt --quiet
+REM ---- 2. Python + dependencies (uv downloads Python itself if needed) ------
+echo [..] Installing Python and dependencies - flask, pywin32...
+"%UV%" sync
 if errorlevel 1 goto fail
 
 ".venv\Scripts\python.exe" -c "import flask, win32com.client, pythoncom" >nul 2>&1
 if errorlevel 1 goto fail
-echo [OK] Dependencies installed
+echo [OK] Python and dependencies ready
 
 REM ---- 3. Check that desktop PowerPoint is installed -----------------------
 reg query "HKCR\PowerPoint.Application" >nul 2>&1

@@ -1,0 +1,12 @@
+[project]
+name = "powerpoint-control-api"
+version = "0.1.0"
+description = "Control desktop PowerPoint on Windows over HTTP"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=3.0.0",
+    "pywin32>=306; sys_platform == 'win32'",
+]
+
+[tool.uv]
+package = false
